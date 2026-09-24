@@ -2,7 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#if ! defined( _MSC_VER ) && ! defined( __MINGW32__ )
 #include <unistd.h>
+#else
+#include <raikv/win.h>
+#include <winsock2.h>
+#endif
 #include <raikv/ev_publish.h>
 #include <raikv/key_hash.h>
 #include <raimd/rwf_msg.h>

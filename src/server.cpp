@@ -10,9 +10,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#if ! defined( _MSC_VER ) && ! defined( __MINGW32__ )
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#else
+#include <raikv/win.h>
+#endif
 #include <raikv/mainloop.h>
 #include <raimd/md_dict.h>
 #include <omm/ev_omm.h>
