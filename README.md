@@ -25,6 +25,7 @@ Status: **protocol documented; client and server working against ADS 3.x and RFA
   `ssl45`, `sslauto`) and ossl_client, fed from ADS 3.x and omm_server.
 
       ossl_server -o 8101 -p ads1.www:14002 -c /path/to/RDMFieldDictionary_dir
+      ossl_server -o 8101 -t -c /path/to/RDMFieldDictionary_dir     # omm test sources, no upstream
 
 * `ossl_client` — an SSL 4.5 sink client: mounts, prints the service
   directory, opens items, decodes the Marketfeed with raimd.

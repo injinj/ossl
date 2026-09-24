@@ -270,8 +270,10 @@ ossl_server_files := server
 ossl_server_cfile := $(addprefix src/, $(addsuffix .cpp, $(ossl_server_files)))
 ossl_server_objs  := $(addprefix $(objd)/, $(addsuffix .o, $(ossl_server_files)))
 ossl_server_deps  := $(addprefix $(dependd)/, $(addsuffix .d, $(ossl_server_files)))
-ossl_server_libs  := $(ossl_lib)
-ossl_server_lnk   := $(ossl_lib) $(lnk_lib)
+# omm's TestPublish (-t) is built into omm_server, not libomm: link the object
+omm_test_pub_obj  := $(omm_home)/$(build_dir)/obj/test_pub.o
+ossl_server_libs  := $(ossl_lib) $(omm_test_pub_obj)
+ossl_server_lnk   := $(ossl_lib) $(omm_test_pub_obj) $(lnk_lib)
 
 $(bind)/ossl_server$(exe): $(ossl_server_objs) $(ossl_server_libs) $(lnk_dep)
 

@@ -22,6 +22,7 @@
 #include <omm/ev_omm.h>
 #include <omm/ev_omm_client.h>
 #include <omm/src_dir.h>
+#include <omm/test_pub.h>
 #include <ossl/ev_ssl.h>
 
 using namespace rai;
@@ -37,9 +38,11 @@ struct Args : public MainLoopVars {
   OmmSourceDB           source_db;
   const char          * path;
   EvOmmClientParameters ads;
+  const char          * feed;      /* -t test source feed name */
   int                   ssl_port;
+  bool                  test;      /* -t: omm's TestPublish, no upstream */
   Args() : path( 0 ), ads( NULL, "ossl_server", "256", NULL, NULL, NULL ),
-           ssl_port( 0 ) {}
+           feed( 0 ), ssl_port( 0 ), test( false ) {}
 };
 
 struct PrintSrcs : public OmmSrcListener {
@@ -122,6 +125,15 @@ struct Loop : public MainLoop<Args> {
       }
       printf( "ssl_sink port:        %d\n", this->r.ssl_port );
     }
+    if ( this->r.test ) { /* omm_server's -t sources: <feed>.REC.* */
+      add_test_source_dir( this->r.dict, this->r.source_db, this->poll.now_ns,
+                           this->r.feed, 100 );
+      TestPublish *p = new ( aligned_malloc( sizeof( TestPublish ) ) )
+        TestPublish( this->poll, this->r.dict, this->r.source_db );
+      p->start();
+      this->r.source_db.notify_source_change();
+      printf( "test source:          %s.REC.*\n", this->r.feed );
+    }
     if ( this->r.ads.daemon != NULL ) {
       this->omm_client = new ( aligned_malloc( sizeof( EvOmmClient ) ) )
         EvOmmClient( this->poll, this->r.dict, this->r.source_db );
@@ -132,8 +144,8 @@ struct Loop : public MainLoop<Args> {
               this->r.ads.port );
       this->omm_conn->do_connect();
     }
-    else {
-      fprintf( stderr, "no upstream (-p host[:port]), nothing to serve\n" );
+    else if ( ! this->r.test ) {
+      fprintf( stderr, "no upstream (-p host[:port]) and no -t, nothing to serve\n" );
     }
     return true;
   }
@@ -154,6 +166,8 @@ main( int argc, const char *argv[] )
   r.add_desc( "  -c path   = dictionary path              ($cfile_path)" );
   r.add_desc( "  -u user   = upstream login user          (ossl_server)" );
   r.add_desc( "  -i app_id = upstream application id      (256)" );
+  r.add_desc( "  -t        = add test sources, no upstream needed (<feed>.REC.*)" );
+  r.add_desc( "  -r feed   = test feed name               (RSF)" );
   if ( ! r.parse_args( argc, argv ) )
     return 1;
   shm.print();
@@ -161,6 +175,8 @@ main( int argc, const char *argv[] )
   r.path       = r.get_arg( argc, argv, 1, "-c", ".", "cfile_path" );
   r.ads.user   = r.get_arg( argc, argv, 1, "-u", "ossl_server" );
   r.ads.app_id = r.get_arg( argc, argv, 1, "-i", "256" );
+  r.test       = r.bool_arg( argc, argv, 0, "-t", NULL, NULL );
+  r.feed       = r.get_arg( argc, argv, 1, "-r", "RSF" );
   const char * up = r.get_arg( argc, argv, 1, "-p", NULL );
   static char host[ 256 ];
   if ( up != NULL ) {
