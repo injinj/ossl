@@ -30,6 +30,6 @@ update without an intermediate model.
 Depends on raikv, raimd, libdecnumber and omm (the OMM upstream), built the
 same way (`make`, siblings in `../`).
 
-The repository directory is `openssl`; the package, library and include
-directory are `ossl` / `libossl` / `include/ossl` to stay clear of the
-OpenSSL crypto library's `openssl` package and `<openssl/*.h>` headers.
+Named `ossl` (repository, package, `libossl`, `include/ossl`) rather than
+"openssl" to stay clear of the OpenSSL crypto library's package and
+`<openssl/*.h>` headers.
