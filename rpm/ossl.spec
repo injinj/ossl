@@ -14,6 +14,7 @@ BuildRequires:  chrpath
 BuildRequires:  raikv _raikv_dep
 BuildRequires:  raimd _raimd_dep
 BuildRequires:  libdecnumber _libdecnumber_dep
+BuildRequires:  omm _omm_dep
 BuildRequires:  pcre2-devel
 BuildRequires:  git-core
 BuildRequires:  c-ares-devel
@@ -21,6 +22,7 @@ BuildRequires:  zlib-devel
 Requires:       raikv
 Requires:       raimd
 Requires:       libdecnumber
+Requires:       omm
 Requires:       pcre2
 Requires:       c-ares
 Requires:       zlib
