@@ -8,7 +8,7 @@ removal of Marketfeed and SSL from RTDS (PCN206364: legacy APIs unsupported from
 consumers running by fronting an OMM (RSSL) infrastructure with an SSL
 distributor.
 
-Status: **protocol documented, client working; server in progress.**
+Status: **protocol documented; client and server working against ADS 3.x and RFA 7.x.**
 
 * `docs/PROTOCOL.md` — the wire protocol as derived from captures against
   ADS 3.x with the RFA 7.5 / SSL 4.5 demo clients and the element names the
@@ -17,6 +17,15 @@ Status: **protocol documented, client working; server in progress.**
   sequences (mount, directory, open, image, update, group status, pings).
 * `include/ossl/ipc.h`, `src/ipc.cpp` — frame and message parse / build,
   element tables, message type names.
+* `ossl_server` — the SSL sink distributor: SSL 4.0 / 4.5 / 4.0 BE
+  consumers mount on the sink port, items are subscribed from an OMM
+  upstream (an ADS RSSL port or an omm_server) through omm's EvOmmClient
+  and the raikv route table, RWF field lists are re-encoded as Marketfeed.
+  Tested with the RFA 7.5 SSLED adapter (BE), the SSL 4.5 demo (`-E ssl40`,
+  `ssl45`, `sslauto`) and ossl_client, fed from ADS 3.x and omm_server.
+
+      ossl_server -o 8101 -p ads1.www:14002 -c /path/to/RDMFieldDictionary_dir
+
 * `ossl_client` — an SSL 4.5 sink client: mounts, prints the service
   directory, opens items, decodes the Marketfeed with raimd.
 

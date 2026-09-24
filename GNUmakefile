@@ -245,7 +245,7 @@ gen_files   :=
 ipc_defines  := -DOSSL_VER=$(ver_build)
 $(objd)/ipc.o : .copr/Makefile
 $(objd)/ipc.fpic.o : .copr/Makefile
-libossl_files := ipc
+libossl_files := ipc ev_ssl
 libossl_cfile := $(addprefix src/, $(addsuffix .cpp, $(libossl_files)))
 libossl_objs  := $(addprefix $(objd)/, $(addsuffix .o, $(libossl_files)))
 libossl_dbjs  := $(addprefix $(objd)/, $(addsuffix .fpic.o, $(libossl_files)))
@@ -262,6 +262,21 @@ all_libs    += $(libd)/libossl.a
 all_dlls    += $(libd)/libossl.$(dll)
 all_depends += $(libossl_deps)
 ossl_lib    := $(libd)/libossl.a
+
+# ossl_server: the SSL sink distributor, fed by an OMM upstream (libomm client)
+server_defines := -DOSSL_VER=$(ver_build)
+$(objd)/server.o : .copr/Makefile
+ossl_server_files := server
+ossl_server_cfile := $(addprefix src/, $(addsuffix .cpp, $(ossl_server_files)))
+ossl_server_objs  := $(addprefix $(objd)/, $(addsuffix .o, $(ossl_server_files)))
+ossl_server_deps  := $(addprefix $(dependd)/, $(addsuffix .d, $(ossl_server_files)))
+ossl_server_libs  := $(ossl_lib)
+ossl_server_lnk   := $(ossl_lib) $(lnk_lib)
+
+$(bind)/ossl_server$(exe): $(ossl_server_objs) $(ossl_server_libs) $(lnk_dep)
+
+all_exes    += $(bind)/ossl_server$(exe)
+all_depends += $(ossl_server_deps)
 
 # ossl_client: an SSL sink client (mount, directory, open items, print
 # Marketfeed), the counterpart of omm_client
@@ -323,8 +338,9 @@ $(dependd)/depend.make: $(dependd) $(all_depends)
 	@cat $(all_depends) >> $(dependd)/depend.make
 
 .PHONY: dist_bins
-dist_bins: $(all_libs) $(all_dlls) $(bind)/ossl_client$(exe)
+dist_bins: $(all_libs) $(all_dlls) $(bind)/ossl_server$(exe) $(bind)/ossl_client$(exe)
 	chrpath -d $(libd)/libossl.$(dll)
+	chrpath -d $(bind)/ossl_server$(exe)
 	chrpath -d $(bind)/ossl_client$(exe)
 
 .PHONY: dist_rpm
@@ -352,6 +368,7 @@ install: dist_bins
 	install $$f $(install_prefix)/lib ; \
 	fi ; \
 	done
+	install -m 755 $(bind)/ossl_server$(exe) $(install_prefix)/bin
 	install -m 755 $(bind)/ossl_client$(exe) $(install_prefix)/bin
 	install -m 644 include/ossl/*.h $(install_prefix)/include/ossl
 
