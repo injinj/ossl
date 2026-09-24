@@ -274,8 +274,10 @@ ossl_client_lnk   := $(ossl_lib) $(lnk_lib)
 
 $(bind)/ossl_client$(exe): $(ossl_client_objs) $(ossl_client_libs) $(lnk_dep)
 
+ifneq (true,$(mingw))  # posix sockets / poll; the windows port comes with the server
 all_exes    += $(bind)/ossl_client$(exe)
 all_depends += $(ossl_client_deps)
+endif
 
 all_dirs := $(bind) $(libd) $(objd) $(dependd)
 
