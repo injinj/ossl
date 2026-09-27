@@ -223,7 +223,7 @@ EvSslService::dispatch_be( const uint8_t *msg,  size_t len ) noexcept
 {
   if ( len < 4 )
     return false;
-  /* u16 len | u8 hdr (0: one bitmap byte, 2: two) | u8 type | bitmap | fields */
+  /* u16 len | u8 hdr (0: bitmap byte, 2: two) | u8 type | bitmap | fields */
   uint8_t type = msg[ 3 ];
   size_t  bm   = 1 + ( msg[ 2 ] >> 1 );
   if ( len < 4 + bm )
@@ -236,13 +236,14 @@ EvSslService::dispatch_be( const uint8_t *msg,  size_t len ) noexcept
     case BE_PING_ACK:      /* 00 12 05 00 00 00 00 */
     case BE_PING:
       return true;
-    case BE_IMAGE_REQ: {   /* 02 13 06 03 | u16 svc | u32 item | u8 type | u8len name | ... */
+    /* 02 13 06 03 | u16 svc | u32 item | u8 type | u8len name | ... */
+    case BE_IMAGE_REQ: {
       if ( n < 2 + 4 + 1 + 1 )
         return false;
       uint16_t svc_id = be16( p );
       uint32_t item_id = be32( &p[ 2 ] );
       uint8_t  req = p[ 6 ], nl = p[ 7 ];
-      if ( n < 8 + nl )
+      if ( n < 8 + (size_t) nl )
         return false;
       const char * ric = (const char *) &p[ 8 ];
       if ( svc_id == 0 || svc_id > this->source_db.source_list.count )
@@ -256,7 +257,7 @@ EvSslService::dispatch_be( const uint8_t *msg,  size_t len ) noexcept
         return false;
       uint16_t svc_id = be16( p );
       uint8_t  nl = p[ 2 ];
-      if ( n < 3 + nl || svc_id == 0 ||
+      if ( n < 3 + (size_t) nl || svc_id == 0 ||
            svc_id > this->source_db.source_list.count )
         return false;
       OmmSource * src = this->source_db.source_list.ptr[ svc_id - 1 ].hd;
@@ -437,7 +438,7 @@ EvSslService::close_all( void ) noexcept
     this->close_item( *it, loc );
 }
 
-/* ---- outbound ------------------------------------------------------------- */
+/* outbound */
 uint8_t
 EvSslService::msg_type( SslOp op ) const noexcept
 {
@@ -477,25 +478,27 @@ EvSslService::send_mount_ack( void ) noexcept
   w.start( this->prot_type, this->prot_ver, this->msg_type( OP_MOUNT_ACK ),
            this->user_id );
   if ( this->is_45() ) {
-    w.fixed( FX_OPEN_LIMIT, SSL_OPEN_LIMIT )
-     .fixed( FX_PING_INTERVAL, this->ping_interval )
+    w.fixed( FX_OPEN_LIMIT     , SSL_OPEN_LIMIT )
+     .fixed( FX_PING_INTERVAL  , this->ping_interval )
      .fixed( FX_SESSION_QUALITY, SQ_NORMAL )
-     .fixed( FX_SESSION_KEY, 0 )
-     .fixed( FX_CONF_SEQ_NUM, 0 )
+     .fixed( FX_SESSION_KEY    , 0 )
+     .fixed( FX_CONF_SEQ_NUM   , 0 )
      .fixed( FX_MAX_UNCONFIRMED, 0x3fffffff )
-     .fixed( FX_MAX_ITEM_NAME, 25 )
-     .fixed( FX_MOUNT_FLAGS, 0x25b7 )
-     .var( VR_HOSTNAME, host )
-     .var( VR_INSTANCE_ID, "ossl" )
-     .var( VR_APP_NAME, "ossl" );
+     .fixed( FX_MAX_ITEM_NAME  , 25 )
+     .fixed( FX_MOUNT_FLAGS    , 0x25b7 )
+     .var  ( VR_HOSTNAME       , host )
+     .var  ( VR_INSTANCE_ID    , "ossl" )
+     .var  ( VR_APP_NAME       , "ossl" );
     this->send_frame( msg, w.finish() );
   }
   else if ( this->prot_ver == PV_SSL_4 ) {
     char dist[ 160 ];
     ::snprintf( dist, sizeof( dist ), "%s.ossl.ossl", host );
-    w.fixed( FX_MUX_TAG, 0 )
-     .fixed( FX_MAX_ITEM_NAME, 0xfe )
-     .var( VR_DISTRIBUTOR_NAME, dist );
+
+    w.fixed( FX_MUX_TAG         , 0 )
+     .fixed( FX_MAX_ITEM_NAME   , 0xfe )
+     .var  ( VR_DISTRIBUTOR_NAME, dist );
+
     this->send_frame( msg, w.finish() );
   }
   else { /* BE: bare ack, then the compact text message */
@@ -507,6 +510,7 @@ EvSslService::send_mount_ack( void ) noexcept
     be[ n++ ] = 0x00; be[ n++ ] = BE_MOUNT_ACK_TEXT; be[ n++ ] = 0x05;
     be[ n++ ] = 0xfe;
     n += put_str16( &be[ n ], dist, dl );
+
     put16( be, (uint16_t) n );
     this->send_frame( be, n );
   }
@@ -518,7 +522,7 @@ EvSslService::send_mount_nak( const char *text ) noexcept
   uint8_t      msg[ 256 ];
   SslMsgWriter w( msg, sizeof( msg ) );
   w.start( this->prot_type, this->prot_ver, this->msg_type( OP_MOUNT_NAK ), 0 )
-   .var( VR_TEXT, text );
+   .var  ( VR_TEXT        , text );
   this->send_frame( msg, w.finish() );
 }
 
@@ -530,22 +534,25 @@ EvSslService::send_service( OmmSource &src,  uint32_t idx,  bool up ) noexcept
   if ( this->is_45() ) {
     w.start( this->prot_type, this->prot_ver, this->msg_type( OP_SERVICE ),
              this->user_id )
-     .fixed( FX_STATUS_STATE, up ? SS_UP : SS_DOWN )
-     .fixed( FX_CONF_SEQ_NUM, 0 )
-     .fixed( FX_OPEN_LIMIT, SSL_OPEN_LIMIT )
+     .fixed( FX_STATUS_STATE    , up ? SS_UP : SS_DOWN )
+     .fixed( FX_CONF_SEQ_NUM    , 0 )
+     .fixed( FX_OPEN_LIMIT      , SSL_OPEN_LIMIT )
      .fixed( FX_DATA_TYPE_FORMAT, DF_MARKETFEED_RECORD )
-     .var( VR_SOURCE_NAME, src.info.service_name, src.info.service_name_len );
+     .var  ( VR_SOURCE_NAME     , src.info.service_name,
+                                  src.info.service_name_len );
     this->send_frame( msg, w.finish() );
   }
   else if ( this->is_be() ) {
     /* 00 0b 05 | u16 id | 00 01 (state) | 00 00 00 01 | u8len name | 00 02 */
     size_t n = 2;
     msg[ n++ ] = 0x00; msg[ n++ ] = BE_SERVICE_STATUS; msg[ n++ ] = 0x05;
+
     put16( &msg[ n ], this->svc_be_id( idx ) ); n += 2;
-    put16( &msg[ n ], up ? SS_UP : SS_DOWN ); n += 2;
-    put32( &msg[ n ], 1 ); n += 4;
+    put16( &msg[ n ], up ? SS_UP : SS_DOWN );   n += 2;
+    put32( &msg[ n ], 1 );                      n += 4;
     n += put_str8( &msg[ n ], src.info.service_name, src.info.service_name_len );
-    put16( &msg[ n ], DF_MARKETFEED_RECORD ); n += 2;
+    put16( &msg[ n ], DF_MARKETFEED_RECORD );   n += 2;
+
     put16( msg, (uint16_t) n );
     this->send_frame( msg, n );
   }
@@ -578,7 +585,7 @@ EvSslService::send_service_table( void ) noexcept
     tbl[ 0 ] = k;
     SslMsgWriter w( msg, sizeof( msg ) );
     w.start( this->prot_type, this->prot_ver, SNK_SRC_TBL, this->user_id )
-     .var( VR_DATA, tbl, n );
+     .var  ( VR_DATA        , tbl, n );
     this->send_frame( msg, w.finish() );
   }
   else {
@@ -628,19 +635,23 @@ EvSslService::send_group_status( OmmSource &src,  uint32_t idx,
   w.start( this->prot_type, this->prot_ver, this->msg_type( OP_GROUP_STATUS ),
            this->user_id )
    .fixed( FX_STATUS_STATE, IS_STALE )
-   .fixed( FX_STATUS_CODE, SC_NONE )
-   .fixed( FX_GROUP, group );
-  if ( this->is_45() ) w.fixed( FX_CONF_SEQ_NUM, 0 );
+   .fixed( FX_STATUS_CODE , SC_NONE )
+   .fixed( FX_GROUP       , group );
+
+  if ( this->is_45() )
+    w.fixed( FX_CONF_SEQ_NUM, 0 );
+
   w.var( VR_SOURCE_NAME, src.info.service_name, src.info.service_name_len )
-   .var( VR_TEXT, GONE_DOWN_TEXT );
+   .var( VR_TEXT       , GONE_DOWN_TEXT );
   this->send_frame( msg, w.finish() );
 
   SslMsgWriter w2( msg, sizeof( msg ) );
   w2.start( this->prot_type, this->prot_ver, this->msg_type( OP_CHANGE_GROUP ),
             this->user_id )
-    .fixed( FX_GROUP, group )
+    .fixed( FX_GROUP , group )
     .fixed( FX_GROUP2, 0 );
-  if ( this->is_45() ) w2.fixed( FX_CONF_SEQ_NUM, 0 );
+  if ( this->is_45() )
+    w2.fixed( FX_CONF_SEQ_NUM, 0 );
   w2.var( VR_SOURCE_NAME, src.info.service_name, src.info.service_name_len );
   this->send_frame( msg, w2.finish() );
 }
@@ -692,11 +703,11 @@ EvSslService::send_data( SslItem &it,  SslOp op,  uint8_t state,
            this->user_id );
   if ( ! is_upd ) {
     w.fixed( FX_STATUS_STATE, state )
-     .fixed( FX_STATUS_CODE, code );
+     .fixed( FX_STATUS_CODE , code );
   }
   if ( op != OP_STATUS ) {
     w.fixed( FX_DATA_TYPE_FORMAT, DF_MARKETFEED_RECORD )
-     .fixed( FX_DATA_TYPE_DESC, 0 );
+     .fixed( FX_DATA_TYPE_DESC  , 0 );
   }
   if ( ! is_upd && op != OP_STATUS )
     w.fixed( FX_GROUP, group );
@@ -707,10 +718,11 @@ EvSslService::send_data( SslItem &it,  SslOp op,  uint8_t state,
   if ( this->is_45() && ! is_upd )
     w.fixed( FX_CONF_SEQ_NUM, 0 );
   w.var( VR_SOURCE_NAME, it.svc(), it.svc_len )
-   .var( VR_ITEM_NAME, it.ric(), it.ric_len() );
+   .var( VR_ITEM_NAME  , it.ric(), it.ric_len() );
   if ( ! is_upd ) {
     if ( op != OP_STATUS )
-      w.var( VR_NEXT_NAME, "", 0 ).var( VR_PREV_NAME, "", 0 );
+      w.var( VR_NEXT_NAME, "", 0 )
+       .var( VR_PREV_NAME, "", 0 );
     w.var( VR_TEXT, text, text_len );
   }
   if ( op != OP_STATUS )
@@ -766,7 +778,7 @@ EvSslService::send_confirm( void ) noexcept
   this->send_frame( msg, w.finish() );
 }
 
-/* ---- data from the route table (the OMM client publishes RWF) ------------- */
+/* data from the route table (the OMM client publishes RWF) */
 bool
 EvSslService::on_msg( EvPublish &pub ) noexcept
 {
@@ -860,7 +872,7 @@ EvSslService::on_msg( EvPublish &pub ) noexcept
   return true;
 }
 
-/* ---- service state changes ------------------------------------------------- */
+/* service state changes */
 void
 EvSslService::on_src_change( void ) noexcept
 {
@@ -886,7 +898,7 @@ EvSslService::on_src_change( void ) noexcept
   this->idle_push_write();
 }
 
-/* ---- lifecycle ---------------------------------------------------------------- */
+/* ping timer */
 bool
 EvSslService::timer_expire( uint64_t timer_id,  uint64_t ) noexcept
 {

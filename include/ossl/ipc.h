@@ -29,22 +29,24 @@
 namespace rai {
 namespace ossl {
 
-/* ---- 1. connect record ------------------------------------------------ */
-static const uint8_t SSL_CONNECT_REQ[ 12 ] =
-  { 0x00,0x00,0x00,0x12, 0x00,0x00,0x00,0x04, 0x00,0x0c, 0x00,0x00 };
-static const uint8_t SSL_CONNECT_ACK[ 13 ] =
-  { 0x00,0x0d, 0x02,0x05, 0x00,0x00,0x00,0x00, 0x04, 0x0c,0xe4, 0x00,0x00 };
+/* connect record */
+static const uint8_t SSL_CONNECT_REQ[ 12 ] = { 0x00, 0x00, 0x00, 0x12,
+                                               0x00, 0x00, 0x00, 0x04,
+                                               0x00, 0x0c, 0x00, 0x00 };
+static const uint8_t SSL_CONNECT_ACK[ 13 ] = { 0x00, 0x0d, 0x02, 0x05,
+                                               0x00, 0x00, 0x00, 0x00,
+                                               0x04, 0x0c, 0xe4, 0x00, 0x00 };
 static const size_t  SSL_CONNECT_REQ_LEN = 12,
                      SSL_CONNECT_ACK_LEN = 13,
                      SSL_MAX_FRAME       = 0x0ce4; /* 3300, in the ack */
 
-/* ---- 2. frame --------------------------------------------------------- */
+/* frame */
 static const uint8_t SSL_FRAME_MAGIC[ 3 ] = { 0x04, 0x00, 0x06 };
 static const uint8_t SSL_FRAME_FROM_CLIENT = 0x00,
                      SSL_FRAME_FROM_SERVER = 0x02;
 static const size_t  SSL_FRAME_HDR = 6;    /* len(2) magic(3) flags(1) */
 
-/* ---- 3. message header ------------------------------------------------ */
+/* message header */
 enum SslProtType {   /* u16 in the header, which msg_type table applies */
   PT_SINK_DIST = 1,  /* SSL 4.0 sink protocol */
   PT_SRC_DIST  = 2,  /* SSL 4.0 source protocol */
@@ -63,41 +65,42 @@ static const uint8_t SSL_HDR_LEN = 12; /* counts the u16 msg_len */
 
 /* msg_type, SSL 4.0 sink protocol (PT_SINK_DIST, 1-based) */
 enum SslSinkMsgType {
-  SNK_GBL_STATUS    = 0x01, SNK_GBL_UPDATE     = 0x02, SNK_PG_IMAGE     = 0x03,
-  SNK_PG_UPDATE     = 0x04, SNK_PG_STATUS      = 0x05, SNK_RENAME       = 0x06,
-  SNK_REC_IMAGE     = 0x07, SNK_REC_UPDATE     = 0x08, SNK_REC_STATUS   = 0x09,
-  SNK_INSERT_REQ    = 0x0a, SNK_INSERT_ACK     = 0x0b, SNK_ACCESS_LOCK  = 0x0c,
-  SNK_MOUNT_REQ     = 0x0d, SNK_MOUNT_NAK      = 0x0e, SNK_MOUNT_ACK    = 0x0f,
-  SNK_CLOSE_REQ     = 0x10, SNK_CLOSE_NAK      = 0x11, SNK_OPEN_REQ     = 0x12,
-  SNK_OPEN_NAK      = 0x13, SNK_MUX_CLI_DISMOUNT = 0x14, SNK_MUX_CLI_FORCE_CLOSE = 0x15,
-  SNK_PING_REQ      = 0x16, SNK_PING           = 0x17, SNK_SRC_TBL_REQ  = 0x18,
-  SNK_SRC_TBL       = 0x19, SNK_PRIORITY_REQ   = 0x1a, SNK_PRIORITY_NAK = 0x1b,
-  SNK_INSERT_NAK    = 0x1c, SNK_CLIENT_START   = 0x1d, SNK_CLIENT_EXIT  = 0x1e,
-  SNK_SERVICE_UP    = 0x1f, SNK_SERVICE_DOWN   = 0x20, SNK_GROUP_STATUS = 0x21,
-  SNK_CHANGE_GROUP  = 0x22, SNK_ITEM_IMAGE     = 0x23, SNK_ITEM_UPDATE  = 0x24,
-  SNK_ITEM_STATUS   = 0x25, SNK_BROADCAST      = 0x26, SNK_GROUP_MERGE  = 0x27,
-  SNK_CHANNEL_STATUS = 0x28, SNK_ITEM_UPDATE2  = 0x29, SNK_APPENDIX_A_REQ = 0x2a,
-  SNK_APPENDIX_A    = 0x2b, SNK_APPENDIX_A_NAK = 0x2c
+  SNK_GBL_STATUS     = 0x01, SNK_GBL_UPDATE     = 0x02, SNK_PG_IMAGE    = 0x03,
+  SNK_PG_UPDATE      = 0x04, SNK_PG_STATUS      = 0x05, SNK_RENAME      = 0x06,
+  SNK_REC_IMAGE      = 0x07, SNK_REC_UPDATE     = 0x08, SNK_REC_STATUS  = 0x09,
+  SNK_INSERT_REQ     = 0x0a, SNK_INSERT_ACK     = 0x0b, SNK_ACCESS_LOCK = 0x0c,
+  SNK_MOUNT_REQ      = 0x0d, SNK_MOUNT_NAK      = 0x0e, SNK_MOUNT_ACK   = 0x0f,
+  SNK_CLOSE_REQ      = 0x10, SNK_CLOSE_NAK      = 0x11, SNK_OPEN_REQ    = 0x12,
+  SNK_OPEN_NAK       = 0x13, SNK_MUX_CLI_DISMOUNT = 0x14, SNK_MUX_CLI_FORCE_CLOSE = 0x15,
+  SNK_PING_REQ       = 0x16, SNK_PING           = 0x17, SNK_SRC_TBL_REQ = 0x18,
+  SNK_SRC_TBL        = 0x19, SNK_PRIORITY_REQ   = 0x1a, SNK_PRIORITY_NAK= 0x1b,
+  SNK_INSERT_NAK     = 0x1c, SNK_CLIENT_START   = 0x1d, SNK_CLIENT_EXIT = 0x1e,
+  SNK_SERVICE_UP     = 0x1f, SNK_SERVICE_DOWN   = 0x20, SNK_GROUP_STATUS= 0x21,
+  SNK_CHANGE_GROUP   = 0x22, SNK_ITEM_IMAGE     = 0x23, SNK_ITEM_UPDATE = 0x24,
+  SNK_ITEM_STATUS    = 0x25, SNK_BROADCAST      = 0x26, SNK_GROUP_MERGE = 0x27,
+  SNK_CHANNEL_STATUS = 0x28, SNK_ITEM_UPDATE2   = 0x29, SNK_APPENDIX_A_REQ = 0x2a,
+  SNK_APPENDIX_A     = 0x2b, SNK_APPENDIX_A_NAK = 0x2c
 };
 /* msg_type, SSL 4.5 protocol (PT_SSLLIB, 1-based) */
 enum Ssl45MsgType {
-  S45_BROADCAST     = 0x01, S45_RENAME         = 0x02, S45_INSERT_REQ   = 0x03,
-  S45_INSERT_NAK    = 0x04, S45_INSERT_ACK     = 0x05, S45_MOUNT_REQ    = 0x06,
-  S45_MOUNT_NAK     = 0x07, S45_MOUNT_ACK      = 0x08, S45_CLOSE_REQ    = 0x09,
-  S45_IMAGE_REQ     = 0x0a, S45_PING           = 0x0b, S45_PING_ACK     = 0x0c,
-  S45_SERVICE_STATUS = 0x0d, S45_PRIORITY_REQ  = 0x0e, S45_ITEM_IMAGE   = 0x0f,
-  S45_ITEM_UPDATE   = 0x10, S45_ITEM_STATUS    = 0x11, S45_MUX_CLI_DISMOUNT = 0x12,
-  S45_MUX_CLI_FORCE_CLOSE = 0x13, S45_MUX_CLI_START = 0x14, S45_MUX_CLI_EXIT = 0x15,
-  S45_GROUP_STATUS  = 0x16, S45_GROUP_MERGE    = 0x17, S45_CHANGE_GROUP = 0x18,
-  S45_CHANNEL_STATUS = 0x19, S45_HALT_UPDATES  = 0x1a, S45_LOAD_REQ     = 0x1b,
-  S45_CONFIRM_DELIVERY = 0x1c, S45_CRITERIA_ACK = 0x1d, S45_CRITERIA_CLOSE = 0x1e,
-  S45_CRITERIA_NAK  = 0x1f, S45_CRITERIA_OPEN  = 0x20, S45_CRITERIA_ADD_ITEMS = 0x21,
-  S45_CRITERIA_DELETE_ITEMS = 0x22, S45_SET_MAX_UNCONFIRMED = 0x23, S45_DISMOUNT = 0x24,
-  S45_RECONNECT_ACK = 0x25, S45_RECONNECT_NAK  = 0x26, S45_RECONNECT_REQ = 0x27,
-  S45_UNSOLICITED_IMAGE = 0x28, S45_PERMISSION_DATA = 0x29, S45_SRC_IMAGE_REQ_THROTTLE = 0x2a,
-  S45_SRC_SERVER_MODE = 0x2b, S45_CRITERIA_INFO = 0x2c, S45_ITEM_UPDATE2 = 0x2d,
-  S45_CONFIG_REQ    = 0x2e, S45_CONFIG_ACK     = 0x2f, S45_CONFIG_NAK   = 0x30,
-  S45_ACCESS_LOCK   = 0x31
+  S45_BROADCAST      = 0x01, S45_RENAME         = 0x02, S45_INSERT_REQ  = 0x03,
+  S45_INSERT_NAK     = 0x04, S45_INSERT_ACK     = 0x05, S45_MOUNT_REQ   = 0x06,
+  S45_MOUNT_NAK      = 0x07, S45_MOUNT_ACK      = 0x08, S45_CLOSE_REQ   = 0x09,
+  S45_IMAGE_REQ      = 0x0a, S45_PING           = 0x0b, S45_PING_ACK    = 0x0c,
+  S45_SERVICE_STATUS = 0x0d, S45_PRIORITY_REQ   = 0x0e, S45_ITEM_IMAGE  = 0x0f,
+  S45_ITEM_UPDATE    = 0x10, S45_ITEM_STATUS    = 0x11, S45_MUX_CLI_DISMOUNT = 0x12,
+
+  S45_MUX_CLI_FORCE_CLOSE = 0x13, S45_MUX_CLI_START   = 0x14, S45_MUX_CLI_EXIT       = 0x15,
+  S45_GROUP_STATUS        = 0x16, S45_GROUP_MERGE     = 0x17, S45_CHANGE_GROUP       = 0x18,
+  S45_CHANNEL_STATUS      = 0x19, S45_HALT_UPDATES    = 0x1a, S45_LOAD_REQ           = 0x1b,
+  S45_CONFIRM_DELIVERY    = 0x1c, S45_CRITERIA_ACK    = 0x1d, S45_CRITERIA_CLOSE     = 0x1e,
+  S45_CRITERIA_NAK        = 0x1f, S45_CRITERIA_OPEN   = 0x20, S45_CRITERIA_ADD_ITEMS = 0x21,
+  S45_CRITERIA_DELETE_ITEMS = 0x22, S45_SET_MAX_UNCONFIRMED = 0x23, S45_DISMOUNT     = 0x24,
+  S45_RECONNECT_ACK       = 0x25, S45_RECONNECT_NAK   = 0x26, S45_RECONNECT_REQ      = 0x27,
+  S45_UNSOLICITED_IMAGE   = 0x28, S45_PERMISSION_DATA = 0x29, S45_SRC_IMAGE_REQ_THROTTLE = 0x2a,
+  S45_SRC_SERVER_MODE     = 0x2b, S45_CRITERIA_INFO   = 0x2c, S45_ITEM_UPDATE2       = 0x2d,
+  S45_CONFIG_REQ          = 0x2e, S45_CONFIG_ACK      = 0x2f, S45_CONFIG_NAK         = 0x30,
+  S45_ACCESS_LOCK         = 0x31
 };
 /* msg_type, 4.0 BE compact messages (observed, own numbering) */
 enum SslBeMsgType {
@@ -106,7 +109,6 @@ enum SslBeMsgType {
   BE_MOUNT_ACK_TEXT = 0x0d, BE_SRC_TBL_END     = 0x0e, BE_SRC_TBL_REQ   = 0x0f,
   BE_PING_ACK       = 0x12, BE_IMAGE_REQ       = 0x13, BE_CLOSE_REQ     = 0x14
 };
-
 /* fixed-width elements: tag + value, in the fixed_len block */
 enum SslFixedTag {
   FX_STATUS_CODE      = 0x02, /* u8  SslStatusCode */

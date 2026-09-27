@@ -15,82 +15,110 @@ namespace {
 struct FixedDef { uint8_t tag, width; const char *name; };
 static const FixedDef fixed_defs[] = {
   { FX_STATUS_CODE,      1, "status_code" },
+  { FX_OPEN_REQ_TYPE,    1, "open_req_type" },
+  { FX_MUX_TAG,          1, "mux_tag" },
+  { FX_MAP,              1, "map" },
+  { FX_SPG_OPERATOR,     1, "spg_operator" },
+  { FX_STATUS_STATE,     1, "status_state" },
+  { FX_MAX_ITEM_NAME,    1, "max_item_name" },
+  { FX_NAMES_LIST_FLAG,  1, "names_list_flag" },
+  { FX_SESSION_QUALITY,  1, "session_quality" },
+  { FX_DISMOUNT_TYPE,    1, "dismount_type" },
+  { FX_CRITERIA_NAME_TP, 1, "criteria_name_type" }, /* 11 */
+
+  { FX_REQ_NUM_ITEMS,    2, "req_num_items" },
+  { FX_PRIORITY_CLASS,   2, "priority_class" },
+  { FX_MOUNT_FLAGS,      2, "mount_flags" },
+  { FX_DATA_TYPE_FORMAT, 2, "data_type_format" },
+  { FX_DATA_TYPE_DESC,   2, "data_type_descriptor" },
+  { FX_FLAGS,            2, "flags" },
+  { FX_PING_INTERVAL,    2, "ping_interval" },
+  { FX_PROTOCOL,         2, "protocol" },
+  { FX_OPEN_REQ_FLAGS,   2, "open_req_flags" },
+  { FX_CRITERIA_OPEN_OPT,2, "criteria_open_option" },
+  { FX_SERVICE_ID,       2, "service_id" }, /* 11 */
+
   { FX_ITEM_ID,          4, "item_id" },
   { FX_INSERT_ID,        4, "insert_id" },
   { FX_DB_REQ_ID,        4, "db_req_id" },
   { FX_USER_REQ_ID,      4, "user_req_id" },
-  { FX_REQ_NUM_ITEMS,    2, "req_num_items" },
-  { FX_OPEN_REQ_TYPE,    1, "open_req_type" },
-  { FX_PRIORITY_CLASS,   2, "priority_class" },
   { FX_PRIORITY_COUNT,   4, "priority_count" },
-  { FX_MUX_TAG,          1, "mux_tag" },
   { FX_CACHE_SIZE,       4, "cache_size" },
-  { FX_MOUNT_FLAGS,      2, "mount_flags" },
   { FX_LOAD,             4, "load" },
-  { FX_MAP,              1, "map" },
-  { FX_SPG_OPERATOR,     1, "spg_operator" },
   { FX_USER_ID,          4, "user_id" },
-  { FX_STATUS_STATE,     1, "status_state" },
-  { FX_DATA_TYPE_FORMAT, 2, "data_type_format" },
-  { FX_DATA_TYPE_DESC,   2, "data_type_descriptor" },
   { FX_SEQUENCE_NUMBER,  4, "sequence_number" },
   { FX_CACHE_SIZE_V4,    4, "cache_size_v4" },
-  { FX_FLAGS,            2, "flags" },
   { FX_OPEN_LIMIT,       4, "open_limit" },
   { FX_TRIARCH_CFG_FLAGS,4, "triarch_config_flags" },
   { FX_GROUP,            4, "group" },
-  { FX_PING_INTERVAL,    2, "ping_interval" },
-  { FX_MAX_ITEM_NAME,    1, "max_item_name" },
   { FX_GROUP2,           4, "group2" },
   { FX_FILTER_ID,        4, "filter_id" },
-  { FX_PROTOCOL,         2, "protocol" },
-  { FX_OPEN_REQ_FLAGS,   2, "open_req_flags" },
   { FX_MES_REQ_ID,       4, "mes_req_id" },
   { FX_TABLE_SIZE,       4, "table_size" },
   { FX_NUMBER_OF_ITEMS,  4, "number_of_items" },
   { FX_CRITERIA_ID,      4, "criteria_id" },
-  { FX_CRITERIA_OPEN_OPT,2, "criteria_open_option" },
-  { FX_NAMES_LIST_FLAG,  1, "names_list_flag" },
   { FX_SESSION_KEY,      4, "session_key" },
-  { FX_SESSION_QUALITY,  1, "session_quality" },
   { FX_CONF_SEQ_NUM,     4, "conf_seq_num" },
-  { FX_DISMOUNT_TYPE,    1, "dismount_type" },
   { FX_MAX_UNCONFIRMED,  4, "max_unconfirmed" },
   { FX_LAST_SEQ_RECV,    4, "last_seq_recv" },
-  { FX_CRITERIA_NAME_TP, 1, "criteria_name_type" },
-  { FX_CRITERIA_DATA,    4, "criteria_data_info" },
-  { FX_SERVICE_ID,       2, "service_id" }
+  { FX_CRITERIA_DATA,    4, "criteria_data_info" } /* 24 */
 };
+#define bit2( x, y )    ( ( (uint64_t) 1 << x ) | ( (uint64_t) 1 << y ) )
+#define bit3( x, y, z ) ( bit2( x, y ) | ( (uint64_t) 1 << z ) )
+static const uint64_t tag_w[ 3 ] = {
+  bit3( FX_STATUS_CODE,        FX_OPEN_REQ_TYPE,   FX_MUX_TAG         ) |
+  bit3( FX_MAP,                FX_SPG_OPERATOR,    FX_STATUS_STATE    ) |
+  bit3( FX_MAX_ITEM_NAME,      FX_NAMES_LIST_FLAG, FX_SESSION_QUALITY ) |
+  bit2( FX_DISMOUNT_TYPE,      FX_CRITERIA_NAME_TP ), /* 11 */
+
+  bit3( FX_REQ_NUM_ITEMS,      FX_PRIORITY_CLASS,  FX_MOUNT_FLAGS    ) |
+  bit3( FX_DATA_TYPE_FORMAT,   FX_DATA_TYPE_DESC,  FX_FLAGS          ) |
+  bit3( FX_PING_INTERVAL,      FX_PROTOCOL,        FX_OPEN_REQ_FLAGS ) |
+  bit2( FX_CRITERIA_OPEN_OPT,  FX_SERVICE_ID ), /* 11 */
+
+  bit3( FX_ITEM_ID,            FX_INSERT_ID,       FX_DB_REQ_ID         ) |
+  bit3( FX_USER_REQ_ID,        FX_PRIORITY_COUNT,  FX_CACHE_SIZE        ) |
+  bit3( FX_LOAD,               FX_USER_ID,         FX_SEQUENCE_NUMBER   ) |
+  bit3( FX_CACHE_SIZE_V4,      FX_OPEN_LIMIT,      FX_TRIARCH_CFG_FLAGS ) |
+  bit3( FX_GROUP,              FX_GROUP2,          FX_FILTER_ID         ) |
+  bit3( FX_MES_REQ_ID,         FX_TABLE_SIZE,      FX_NUMBER_OF_ITEMS   ) |
+  bit3( FX_CRITERIA_ID,        FX_SESSION_KEY,     FX_CONF_SEQ_NUM      ) |
+  bit3( FX_MAX_UNCONFIRMED,    FX_LAST_SEQ_RECV,   FX_CRITERIA_DATA ) /* 24 */
+};
+#undef bit3
+#undef bit2
 static const char *var_names[] = {
-  "?", "source_name", "item_name", "new_name", "next_name", "prev_name",
-  "text", "data", "attributes", "user_name", "access_lock", "spg_list",
-  "app_key", "position", "instance_id", "tag", "distributor_name",
-  "criteria_name", "app_name", "hostname"
+  "?"          , "source_name" , "item_name"    , "new_name"   , "next_name"  ,
+  "prev_name"  , "text"        , "data"         , "attributes" , "user_name"  ,
+  "access_lock", "spg_list"    , "app_key"      , "position"   , "instance_id",
+  "tag"        , "distrib_name", "criteria_name", "app_name"   , "hostname"
 };
 static const char *sink40_types[] = {
-  "?", "GBL_STATUS", "GBL_UPDATE", "PG_IMAGE", "PG_UPDATE", "PG_STATUS",
-  "RENAME", "REC_IMAGE", "REC_UPDATE", "REC_STATUS", "INSERT_REQ",
-  "INSERT_ACK", "ACCESS_LOCK", "MOUNT_REQ", "MOUNT_NAK", "MOUNT_ACK",
-  "CLOSE_REQ", "CLOSE_NAK", "OPEN_REQ", "OPEN_NAK", "MUX_CLI_DISMOUNT",
-  "MUX_CLI_FORCE_CLOSE", "PING_REQ", "PING", "SRC_TBL_REQ", "SRC_TBL",
-  "PRIORITY_REQ", "PRIORITY_NAK", "INSERT_NAK", "CLIENT_START", "CLIENT_EXIT",
-  "SERVICE_UP", "SERVICE_DOWN", "GROUP_STATUS", "CHANGE_GROUP", "ITEM_IMAGE",
-  "ITEM_UPDATE", "ITEM_STATUS", "BROADCAST", "GROUP_MERGE", "CHANNEL_STATUS",
+  "?"          , "GBL_STATUS"  , "GBL_UPDATE"   , "PG_IMAGE"   , "PG_UPDATE"  ,
+  "PG_STATUS"  , "RENAME"      , "REC_IMAGE"    , "REC_UPDATE" , "REC_STATUS" ,
+  "INSERT_REQ" , "INSERT_ACK"  , "ACCESS_LOCK"  , "MOUNT_REQ"  , "MOUNT_NAK"  ,
+  "MOUNT_ACK"  , "CLOSE_REQ"   , "CLOSE_NAK"    , "OPEN_REQ"   , "OPEN_NAK"   ,
+  "MUX_CLI_DISMOUNT"           , "MUX_CLI_FORCE_CLOSE"         , "PING_REQ"   ,
+  "PING"       , "SRC_TBL_REQ" , "SRC_TBL"      , "PRIORITY_REQ", "PRIORITY_NAK", "INSERT_NAK", "CLIENT_START", "CLIENT_EXIT",
+  "SERVICE_UP" , "SERVICE_DOWN", "GROUP_STATUS" , "CHANGE_GROUP", "ITEM_IMAGE",
+  "ITEM_UPDATE", "ITEM_STATUS" , "BROADCAST"    , "GROUP_MERGE", "CHANNEL_STATUS",
   "ITEM_UPDATE2", "APPENDIX_A_REQ", "APPENDIX_A", "APPENDIX_A_NAK"
 };
 static const char *ssl45_types[] = {
-  "?", "BROADCAST", "RENAME", "INSERT_REQ", "INSERT_NAK", "INSERT_ACK",
-  "MOUNT_REQ", "MOUNT_NAK", "MOUNT_ACK", "CLOSE_REQ", "IMAGE_REQ", "PING",
-  "PING_ACK", "SERVICE_STATUS", "PRIORITY_REQ", "ITEM_IMAGE", "ITEM_UPDATE",
-  "ITEM_STATUS", "MUX_CLI_DISMOUNT", "MUX_CLI_FORCE_CLOSE", "MUX_CLI_START",
-  "MUX_CLI_EXIT", "GROUP_STATUS", "GROUP_MERGE", "CHANGE_GROUP",
-  "CHANNEL_STATUS", "HALT_UPDATES", "LOAD_REQ", "CONFIRM_DELIVERY",
-  "CRITERIA_ACK", "CRITERIA_CLOSE", "CRITERIA_NAK", "CRITERIA_OPEN",
-  "CRITERIA_ADD_ITEMS", "CRITERIA_DELETE_ITEMS", "SET_MAX_UNCONFIRMED",
-  "DISMOUNT", "RECONNECT_ACK", "RECONNECT_NAK", "RECONNECT_REQ",
-  "UNSOLICITED_IMAGE", "PERMISSION_DATA", "SRC_IMAGE_REQ_THROTTLE",
-  "SRC_SERVER_MODE", "CRITERIA_INFO", "ITEM_UPDATE2", "CONFIG_REQ",
-  "CONFIG_ACK", "CONFIG_NAK", "ACCESS_LOCK"
+  "?"          , "BROADCAST"   , "RENAME"       , "INSERT_REQ" , "INSERT_NAK" ,
+  "INSERT_ACK" , "MOUNT_REQ"   , "MOUNT_NAK"    , "MOUNT_ACK"  , "CLOSE_REQ"  ,
+  "IMAGE_REQ"  , "PING"        , "PING_ACK"     , "SERVICE_STATUS",
+  "PRIORITY_REQ", "ITEM_IMAGE" , "ITEM_UPDATE"  , "ITEM_STATUS",
+  "MUX_CLI_DISMOUNT"           , "MUX_CLI_FORCE_CLOSE"         , "MUX_CLI_START",
+  "MUX_CLI_EXIT", "GROUP_STATUS", "GROUP_MERGE" , "CHANGE_GROUP",
+  "CHANNEL_STATUS"             , "HALT_UPDATES" , "LOAD_REQ"   ,
+  "CONFIRM_DELIVERY"           , "CRITERIA_ACK" , "CRITERIA_CLOSE",
+  "CRITERIA_NAK"               , "CRITERIA_OPEN", "CRITERIA_ADD_ITEMS",
+  "CRITERIA_DELETE_ITEMS"      , "SET_MAX_UNCONFIRMED",
+  "DISMOUNT"  , "RECONNECT_ACK", "RECONNECT_NAK", "RECONNECT_REQ",
+  "UNSOLICITED_IMAGE"          , "PERMISSION_DATA", "SRC_IMAGE_REQ_THROTTLE",
+  "SRC_SERVER_MODE"            , "CRITERIA_INFO", "ITEM_UPDATE2",
+  "CONFIG_REQ" , "CONFIG_ACK"  , "CONFIG_NAK"   , "ACCESS_LOCK"
 };
 static const char *be_types[ 0x15 ] = {
   "?", "ITEM_UPDATE", "ITEM_IMAGE", "?", "?", "PING", "?", "?", "GROUP_STATUS",
@@ -102,9 +130,12 @@ static const char *be_types[ 0x15 ] = {
 uint8_t
 rai::ossl::ssl_fixed_width( uint8_t tag ) noexcept
 {
-  for ( size_t i = 0; i < sizeof( fixed_defs ) / sizeof( fixed_defs[ 0 ] ); i++ )
-    if ( fixed_defs[ i ].tag == tag )
-      return fixed_defs[ i ].width;
+  if ( tag < 64 ) {
+    uint64_t b = (uint64_t) 1 << tag;
+    for ( size_t i = 0; i < 3; i++ )
+      if ( ( tag_w[ i ] & b ) != 0 )
+        return 1 << i;
+  }
   return 0;
 }
 
